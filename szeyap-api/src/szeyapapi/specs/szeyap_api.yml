@@ -77,7 +77,7 @@ paths:
                   - metadata
   /romanizations:
     get:
-    summary: Returns a Jyutping Object
+      summary: Returns a Jyutping Object
       description: Optional extended description in CommonMark or HTML.
       operationId: romanizations.get
       parameters:
@@ -100,7 +100,7 @@ paths:
           description: The source language of the phrase. Available options include en (English), ch (Chinese), and default is unk (Unknown).
       responses:
         '200':
-        description: A response with metadata and a list of translations
+          description: A response with metadata and a list of translations
           content:
             application/json:
               schema:
@@ -147,19 +147,19 @@ components:
                 $ref: '#/components/schemas/Jyutping'
     Jyutping:
       type: object
-        properties:
-          HSR:
-            type: string
-          SL:
-            type: string
-          GC:
-            type: string
-          DJ:
-            type: string
-          JW:
-            type: string
-        required:
-          - HSR
-          - SL
-          - GC
-          - JW
+      properties:
+        HSR:
+          type: string
+        SL:
+          type: string
+        GC:
+          type: string
+        DJ:
+          type: string
+        JW:
+          type: string
+      required:
+        - HSR
+        - SL
+        - GC
+        - JW
