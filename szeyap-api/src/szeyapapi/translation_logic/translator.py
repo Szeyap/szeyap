@@ -78,7 +78,6 @@ class Translator:
             return response
         
         if q.lang == lang.EN:
-            answers = list(answers)
             answers = self.rank_by_fuzzy(q, answers)
             answers = self.rank_by_frequency(q, answers)
 
