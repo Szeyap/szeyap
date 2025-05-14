@@ -91,7 +91,6 @@ class Translator:
             answers = rank_by_fuzzy(q.query, list(answers))
         
         for i, defn in enumerate(answers):
-            print(f"{defn['DEFN']=}")
             response.add_answer(construct_translation(i, defn))
             if len(response.answers) == limit:
                 break
@@ -101,8 +100,6 @@ class Translator:
     # Search algorithm is simple here, just iterate the dictionary and search for 
     # matching string
     def ask(self, q: TranslationQuestion, limit: int) -> Response:
-        print(q)
-
         if q.lang == lang.CH or self.CHINESE_MATCH_REGEX.match(q.query):
             answers = self._search_dictionary_by_chinese(q.query)
             return self._construct_answer(q, answers, limit)
@@ -111,7 +108,6 @@ class Translator:
         jyutping = Jyutping(q.query, q.lang)
         # is_jyutping = not jyutping.has_errors()
         is_jyutping = self.JYUTPING_MATCH_REGEX.match(q.query) is not None
-        print(f"{is_jyutping=}")
         if is_jyutping:           
             answers = self._search_dictionary_by_jyutping(jyutping)
             return self._construct_answer(q, answers, limit)
