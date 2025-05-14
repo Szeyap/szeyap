@@ -1,28 +1,45 @@
 import re
-from ..utils.enums import LanguageFormats as lang
 from typing import List
+
+from fuzzywuzzy import fuzz 
+
+from ..utils.enums import LanguageFormats as lang
 from .response import Response
 from .question import TranslationQuestion
 from ..dictionaries.dictionary_base import DictionaryBase
 from .jyutping import Jyutping
 
-
 # A Translator receives Questions and create Responses
 #  - the Translator is created by giving it a dictionary, and it uses the dictionary to create Responses
 #  - like 3D printer, it takes in different colour filaments (different dictionaries) and prints designs (response objects)
 
+def rank_by_fuzzy(query, results):
+    """Ranks results based on fuzzy matching score."""
+    query = query.lower()
+    ranked_results = []
+    for result in results:
+        defn = result["DEFN"]
+        score = fuzz.ratio(query, defn.lower())  # Use ratio or other fuzzywuzzy functions
+        ranked_results.append((result, score))
+
+    ranked_results.sort(key=lambda item: item[1], reverse=True)
+    return [item[0] for item in ranked_results]
+
+
 class Translator:
 
-    ENGLISH_MATCH_REGEX = r"^[a-zA-Z0-9\s\.,\?]*$"
-    CHINESE_MATCH_REGEX = r"[\u4e00-\u9fff]+(?=,|\s|$)"
-    JYUTPING_MATCH_REGEX = r"[A-Za-z]+[1-9]{2,3}\b"
+    ENGLISH_MATCH_REGEX = re.compile(r"^[a-zA-Z0-9\s\.,\?]*$")
+    CHINESE_MATCH_REGEX = re.compile(r"[\u4e00-\u9fff]+(?=,|\s|$)")
+    JYUTPING_MATCH_REGEX = re.compile(r"[A-Za-z]+[1-9]{1,3}")
 
     def __init__(self, name: str, dictionary: DictionaryBase):
         self.name: str = name
         self.data: DictionaryBase = dictionary
     
-    def _search_dictionary(self, phrase: str, field: str):
+    def _search_dictionary(self, phrase: str, field: str, full_match: bool = True):
         def _search_match_fn(x):
+            if full_match:
+                return re.search(rf"\b{phrase}\b", x[field]) is not None
             return phrase in x[field]
         
         return filter(_search_match_fn, self.data.dictionary)
@@ -69,7 +86,12 @@ class Translator:
 
         if not answers:
             return response
+        
+        if q.lang == lang.EN:
+            answers = rank_by_fuzzy(q.query, list(answers))
+        
         for i, defn in enumerate(answers):
+            print(f"{defn['DEFN']=}")
             response.add_answer(construct_translation(i, defn))
             if len(response.answers) == limit:
                 break
@@ -79,18 +101,22 @@ class Translator:
     # Search algorithm is simple here, just iterate the dictionary and search for 
     # matching string
     def ask(self, q: TranslationQuestion, limit: int) -> Response:
+        print(q)
 
-        if q.lang == lang.CH or re.match(self.CHINESE_MATCH_REGEX, q.query):
+        if q.lang == lang.CH or self.CHINESE_MATCH_REGEX.match(q.query):
             answers = self._search_dictionary_by_chinese(q.query)
             return self._construct_answer(q, answers, limit)
         
         # we are trying to see if the query is a jyutping
         jyutping = Jyutping(q.query, q.lang)
-        if not jyutping.has_errors():                
+        # is_jyutping = not jyutping.has_errors()
+        is_jyutping = self.JYUTPING_MATCH_REGEX.match(q.query) is not None
+        print(f"{is_jyutping=}")
+        if is_jyutping:           
             answers = self._search_dictionary_by_jyutping(jyutping)
             return self._construct_answer(q, answers, limit)
         
-        answers = self._search_dictionary(q.query, "DEFN")
+        answers = self._search_dictionary(q.query, "DEFN", full_match=True)
         return self._construct_answer(q, answers, limit)
 
     # def detect_language_format(self, sample: str):

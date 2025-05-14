@@ -25,4 +25,5 @@ class TranslationQuestion(Question):
         self.lang: Lang = lang # if lang != Lang.UNK else Translator.detect_language_format(query)
     
     def __repr__(self) -> str:
-        return super().__repr__()[:-1] + f", lang={self.lang})"
+        query = super().__repr__()[:-1] + f", lang={self.lang})"
+        return query
