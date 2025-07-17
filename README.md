@@ -1,6 +1,14 @@
 # Szeyap App
 Szeyap app is a ... [include description here]
 
+## Developing locally
+
+### Setup environment
+1. Prerequisite: `uv` is installed
+2. Create and activate the virtual environment: `bash setup.sh`
+3. Start the server: `uv run src/szeyapapi/api.py`
+4. Access Swagger UI at `http://localhost:8000/api/ui`
+
 ## Steps to run
 Each service exists as a separate Docker container, so you can run each separately or run using `docker compose` which will *glue* all the containers together and allow your client to communicate with your api, for example.
 

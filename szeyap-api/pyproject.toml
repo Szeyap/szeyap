@@ -10,7 +10,12 @@ dependencies = [
     "connexion",
     "connexion[uvicorn]",
     "connexion[swagger-ui]",
-    "gunicorn"
+    "gunicorn",
+    "pip>=25.1.1",
+    "fuzzywuzzy>=0.18.0",
+    "numpy>=2.3.1",
+    "wordfreq>=3.1.1",
+    "jieba>=0.42.1",
 ]
 
 [project.scripts]
