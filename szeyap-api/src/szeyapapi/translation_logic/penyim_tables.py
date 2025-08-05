@@ -8,7 +8,7 @@ from unicodedata import normalize
 
 PROJECT_ROOT_PATH = os.path.join(os.path.dirname(__file__), "..")
 
-class JyutpingTables:
+class PenyimTables:
 
     def __init__(self) -> None:
         self.initials = {}
@@ -21,19 +21,19 @@ class JyutpingTables:
 
     def load_tables(self):
         # HSR
-        self.tables[Lang.HSR] = self.read_table(cfg.HSR_JYUTPING_TABLE_PATH)
+        self.tables[Lang.HSR] = self.read_table(cfg.HSR_PENYIM_TABLE_PATH)
 
         # SL
-        self.tables[Lang.SL] = self.read_table(cfg.SL_JYUTPING_TABLE_PATH)
+        self.tables[Lang.SL] = self.read_table(cfg.SL_PENYIM_TABLE_PATH)
 
         # GC
-        self.tables[Lang.GC] = self.read_table(cfg.GC_JYUTPING_TABLE_PATH)
+        self.tables[Lang.GC] = self.read_table(cfg.GC_PENYIM_TABLE_PATH)
 
         # DJ
-        self.tables[Lang.DJ] = self.read_table(cfg.DJ_JYUTPING_TABLE_PATH)
+        self.tables[Lang.DJ] = self.read_table(cfg.DJ_PENYIM_TABLE_PATH)
 
         # JW
-        self.tables[Lang.JW] = self.read_table(cfg.JW_JYUTPING_TABLE_PATH)
+        self.tables[Lang.JW] = self.read_table(cfg.JW_PENYIM_TABLE_PATH)
     
     def read_table(self, path: str):
         table = []
@@ -42,7 +42,7 @@ class JyutpingTables:
         return table
     
     def load_tones(self):
-        with open(os.path.join(PROJECT_ROOT_PATH, cfg.JYUTPING_TONES_PATH), 'r') as file:
+        with open(os.path.join(PROJECT_ROOT_PATH, cfg.PENYIM_TONES_PATH), 'r') as file:
             tone_dict = json.load(file)
             for type in [Lang.HSR, Lang.GC, Lang.SL, Lang.DJ, Lang.JW]:
                 self.tones[type] = tone_dict[type]["tones"]
@@ -99,4 +99,4 @@ class JyutpingTables:
         initial_i, final_i = indices
         return self.tables[lang_type][final_i][initial_i]
 
-JYUT_TABLES = JyutpingTables()
+PENYIM_TABLES = PenyimTables()

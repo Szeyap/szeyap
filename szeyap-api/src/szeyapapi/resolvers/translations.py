@@ -11,9 +11,9 @@ sl_translator = Translator("Stephen Li Translator", SL)
 def hello_world():
     return "Hello, World!"
 
-def get(phrase: str, src_lang: str, dictionary: str, limit=10):
+def get(phrase: str, dictionary: str, limit=10):
     # construct Question using phrase
-    q = TranslationQuestion(phrase, Lang[src_lang])
+    q = TranslationQuestion(phrase)
 
     responses = gc_translator.ask(q, limit) if dictionary == "GC_DICT" else sl_translator.ask(q, limit)
 

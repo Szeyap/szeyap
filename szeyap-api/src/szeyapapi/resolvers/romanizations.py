@@ -1,9 +1,9 @@
 from ..utils.enums import LanguageFormats as Lang
-from ..translation_logic.jyutping import Jyutping
+from ..translation_logic.penyim import Penyim
 
 
 def get(phrase: str, src_lang: str):
     # construct Jyutping Object using phrase as sample
-    jyutping = Jyutping(phrase, Lang[src_lang])
+    penyim = Penyim(phrase, Lang[src_lang])
 
-    return jyutping.as_dict()
+    return penyim.as_dict()

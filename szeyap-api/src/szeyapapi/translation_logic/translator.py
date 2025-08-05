@@ -1,15 +1,15 @@
 import re
-from typing import List
 
-from fuzzywuzzy import fuzz 
-import numpy as np 
+import spacy
 from wordfreq import word_frequency
+from fast_langdetect import detect_multilingual
 
-from ..utils.enums import LanguageFormats as lang
-from .response import Response
-from .question import TranslationQuestion
-from ..dictionaries.dictionary_base import DictionaryBase
-from .jyutping import Jyutping
+from szeyapapi.utils.enums import LanguageFormats as lang
+from szeyapapi.translation_logic.response import Response
+from szeyapapi.translation_logic.question import TranslationQuestion
+from szeyapapi.dictionaries.dictionary_base import DictionaryBase
+from szeyapapi.translation_logic.penyim import Penyim
+
 
 # A Translator receives Questions and create Responses
 #  - the Translator is created by giving it a dictionary, and it uses the dictionary to create Responses
@@ -17,35 +17,37 @@ from .jyutping import Jyutping
 
 
 class Translator:
-
-    ENGLISH_MATCH_REGEX = re.compile(r"^[a-zA-Z0-9\s\.,\?]*$")
-    CHINESE_MATCH_REGEX = re.compile(r"[\u4e00-\u9fff]+(?=,|\s|$)")
-    JYUTPING_MATCH_REGEX = re.compile(r"[A-Za-z]+[1-9]{1,3}")
+    nlp = spacy.load("en_core_web_sm")
 
     def __init__(self, name: str, dictionary: DictionaryBase):
         self.name: str = name
         self.data: DictionaryBase = dictionary
     
     def _search_dictionary(self, phrase: str, field: str, full_match: bool = True):
+        """English search"""
+        parsed = self.nlp(phrase)
+        lemmatized_phrase = " ".join([tok.lemma_ for tok in parsed])
+
         def _search_match_fn(x):
             if full_match:
-                return re.search(rf"\b{phrase.lower()}\b", x[field].lower()) is not None
+                return re.search(rf"\b{lemmatized_phrase.lower()}\b", x[field].lower()) is not None
             return phrase.lower() in x[field].lower()
         
         return filter(_search_match_fn, self.data.dictionary)
 
-    def _search_dictionary_by_jyutping(self, jyutping: Jyutping) -> Response:
+    def _search_dictionary_by_penyim(self, penyim: Penyim) -> Response:
+        """Penyim search"""
         def _search_match_fn(x):
-            return any(jyutping == j and j is not None for j in x["JYUTPING"])
-
+            return any(penyim == j and j is not None for j in x["JYUTPING"])
         return filter(_search_match_fn, self.data.dictionary)
 
-
     def _search_dictionary_by_chinese(self, ch_phrase: str) -> Response:
+        """Chinese search"""
         def _search_match_fn(x):
             for trad in x["TRAD"]:
                 if trad and ch_phrase in trad:
                     return True
+                
             for simp in x["SIMP"]:
                 if simp and ch_phrase in simp:
                     return True
@@ -58,27 +60,25 @@ class Translator:
         response.add_metadata("dictionary_url", self.data.src_url)
         
         def construct_translation(i, defn):
-            jyut_as_api_resp = []
-            for j, jyut in enumerate(defn["JYUTPING"]):
-                if jyut and jyut.has_errors():
-                    response.errors.append(f"#{i}: jyutping[{j}] - {jyut.summarize_errors()}")
-                jyut_as_api_resp.append(jyut.as_dict() if jyut else None)
+            penyim_api_response = []
+            for j, parsed_penyim in enumerate(defn["PENYIM"]):
+                if parsed_penyim and parsed_penyim.has_errors():
+                    response.errors.append(f"#{i}: penyim[{j}] - {parsed_penyim.summarize_errors()}")
+                penyim_api_response.append(parsed_penyim.as_dict() if parsed_penyim else None)
             
             return {
                 "english": defn["DEFN"],
                 "chinese": {
                     "traditional": defn["TRAD"],
                     "simplified": defn["SIMP"],
-                    "penyim": defn["PENYIM"],
-                    "jyutping": jyut_as_api_resp
+                    "penyim": penyim_api_response
                 }
             }
 
         if not answers:
             return response
         
-        if q.lang == lang.EN:
-            answers = self.rank_by_frequency(q, answers)
+        answers = self.rank_by_frequency(q, answers)
 
         for i, defn in enumerate(answers):
             response.add_answer(construct_translation(i, defn))
@@ -90,43 +90,28 @@ class Translator:
     # Search algorithm is simple here, just iterate the dictionary and search for 
     # matching string
     def ask(self, q: TranslationQuestion, limit: int) -> Response:
-        if q.lang == lang.CH or self.CHINESE_MATCH_REGEX.match(q.query):
+        detected_language = detect_multilingual(q.query)[0]["lang"]
+
+        # TODO: Automatically detect penyim type 
+        parsed_penyim = Penyim(q.query, lang.JW)
+        answers = self._search_dictionary_by_penyim(q.query)
+        is_penyim = not parsed_penyim.has_errors()
+
+        if is_penyim:
+            answers = self._search_dictionary_by_penyim(parsed_penyim)
+            q.lang = lang.JW
+        elif detected_language == "zh":
             answers = self._search_dictionary_by_chinese(q.query)
-            return self._construct_answer(q, answers, limit)
-        
-        # we are trying to see if the query is a jyutping
-        jyutping = Jyutping(q.query, q.lang)
-        # is_jyutping = not jyutping.has_errors()
-        is_jyutping = self.JYUTPING_MATCH_REGEX.match(q.query) is not None
-        if is_jyutping:           
-            answers = self._search_dictionary_by_jyutping(jyutping)
-            return self._construct_answer(q, answers, limit)
-
-        answers = self._search_dictionary(q.query, "DEFN", full_match=True)
+            q.lang = lang.CH
+        elif detected_language == "en":
+            q.lang = lang.EN
+            answers = self._search_dictionary(q.query, "DEFN", full_match=True)
+        else:
+            raise ValueError("Query could not be parsed as: English, Chinese, or Jyutping")
         return self._construct_answer(q, answers, limit)
-        
-    @staticmethod
-    def rank_by_fuzzy(q: TranslationQuestion, results: list[dict]):
-        """Ranks results based on fuzzy matching score."""
-        if q.lang != lang.EN: # Only rank English results
-            return results 
-        
-        query = q.query.lower()
-        ranked_results = []
-        for result in results:
-            defn = result["DEFN"]
-            score = fuzz.token_sort_ratio(query, defn.lower())  
-            ranked_results.append((result, score))
-
-        ranked_results.sort(key=lambda item: item[1], reverse=True)
-        return [item[0] for item in ranked_results]
     
     @staticmethod
     def rank_by_frequency(q: TranslationQuestion, results: list[dict]):
-        if q.lang != lang.EN: # Only rank English results
-            return results 
-        
-        query = q.query.lower()
         ranked_results = []
         for result in results:
             word = result["TRAD"][0]
@@ -138,18 +123,9 @@ class Translator:
         ranked_results.sort(key=lambda item: item[1], reverse=True)
         return [item[0] for item in ranked_results]
 
-    # def detect_language_format(self, sample: str):
-    #     match_obj = re.search(self.JYUTPING_MATCH_REGEX, sample)
-    #     if match_obj:
-    #         # TODO: determine type of jyutping
-    #         return lang.HSR
 
-    #     match_obj = re.search(self.CHINESE_MATCH_REGEX, sample)
-    #     if match_obj:
-    #         return lang.CH
+if __name__ == "__main__":
+    from szeyapapi.dictionaries.genechin_dictionary import GC
+    from szeyapapi.dictionaries.stephenli_dictionary import SL
 
-    #     match_obj = re.search(self.ENGLISH_MATCH_REGEX, sample)
-    #     if match_obj:
-    #         return lang.EN
-
-    #     return lang.UNK
+    translator = Translator("Gene Chin Translator", GC)

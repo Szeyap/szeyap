@@ -1,11 +1,11 @@
 from ..utils.enums import LanguageFormats as Lang
 from ..utils.enums import Tones as Tone
-from .jyutping_tables import JYUT_TABLES
+from .penyim_tables import PENYIM_TABLES
 
 import re
 from unicodedata import normalize
 
-class Jyutping:
+class Penyim:
 
   def __init__(self, sample: str, lang_type: Lang) -> None:
     self.sample = normalize("NFD", sample)
@@ -79,7 +79,7 @@ class Jyutping:
       return
 
     for i, (jyutping_q, tone_q) in enumerate(phrases):
-      indices, tone = JYUT_TABLES.search(jyutping_q, tone_q, lang_type)
+      indices, tone = PENYIM_TABLES.search(jyutping_q, tone_q, lang_type)
       if indices == (-1, -1) or tone is None:
         self.indices.append((-1, -1))
         self.formats.append(None)
@@ -93,16 +93,16 @@ class Jyutping:
         self.formats.append({lang: self._merge_initial_final_tone(indices, tone, lang) for lang in [Lang.HSR, Lang.GC, Lang.SL, Lang.DJ, Lang.JW]})
 
   def _merge_initial_final_tone(self, indices: tuple[int,int], tone: Tone, lang: Lang):
-    tone = JYUT_TABLES.get_tone(lang, tone)
+    tone = PENYIM_TABLES.get_tone(lang, tone)
     if lang == lang.GC:
       if tone in (Tone.RARE1, Tone.RARE2, Tone.RARE3, Tone.RARE5, Tone.RARE6):
-        return JYUT_TABLES.get_transdimensional_match(indices, lang) + tone
+        return PENYIM_TABLES.get_transdimensional_match(indices, lang) + tone
       else:
         combining_ch, slash = (tone[0], "/") if len(tone) == 2 else (tone[0], "")
-        initial, final = JYUT_TABLES.get_initial_final(indices, lang)
+        initial, final = PENYIM_TABLES.get_initial_final(indices, lang)
         return initial + final[:1] + combining_ch + final[1:] + slash
     # else
-    return JYUT_TABLES.get_transdimensional_match(indices, lang) + tone
+    return PENYIM_TABLES.get_transdimensional_match(indices, lang) + tone
 
   def render_in_original_format(self, lang: Lang) -> str:
     curr = 0
@@ -133,11 +133,11 @@ class Jyutping:
     return {lang: self.render_in_original_format(lang) for lang in [Lang.HSR, Lang.GC, Lang.SL, Lang.DJ, Lang.JW]}
   
   def __eq__(self, other):
-    if not isinstance(other, Jyutping):
+    if not isinstance(other, Penyim):
       return False
     return self.indices == other.indices
 
   def __ne__(self, other) -> bool:
-    if not isinstance(other, Jyutping):
+    if not isinstance(other, Penyim):
       return True
     return self.indices != other.indices

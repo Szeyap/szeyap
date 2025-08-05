@@ -14,11 +14,11 @@ Each Dictionary Class is a singleton and is instantiated when you import the mod
 
 
 ## <romanization_system>_table.csv
-- hsr_jyutping_table.csv
-- sl_jyutping_table.csv
-- gc_jyutping_table.csv
-- dj_jyutping_table.csv
-- jw_jyutping_table.csv
+- hsr_penyim_table.csv
+- sl_penyim_table.csv
+- gc_penyim_table.csv
+- dj_penyim_table.csv
+- jw_penyim_table.csv
 
 
 These files are taken from the sheets in `raw/Initial_Finals_Converter.xlsx`. They are read when the  singleton `class JyutpingTables` is imported. The csv file paths for each romanization table are configured in `config.json`
@@ -28,7 +28,7 @@ This file is taken from the spreadsheet `raw/Initial_Finals_Converter.xlsx`. Ton
 
 It is important to note that for **Gene Chin** the tone format is complicated, involving *diacritic* marks. Programatically, we use Unicode combining characters to add these marks onto the letters, see more details in the [Unicode Diacritic Marks](#unicode-diacritic-marks) section below.
 
-In addition, Gene Chin (GC) jyutping system can have a slash indicating a rising tone at the end of the word.
+In addition, Gene Chin (GC) penyim system can have a slash indicating a rising tone at the end of the word.
 
 All romanization sytems have their tones stored as a **key, string_value pair** such as `LOW_RISE`: `"225"`, except *GC* tones, which can **also** be stored as a tuple, as demonstrated below:
  1. `LOW_FLAT`: `["\u0302"]`

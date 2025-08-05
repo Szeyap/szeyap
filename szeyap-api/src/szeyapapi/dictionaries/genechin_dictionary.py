@@ -1,7 +1,7 @@
 from .dictionary_base import DictionaryBase
 from ..config import GENE_CHIN_DICTIONARY_PATH, PROJ_ROOT
 from ..utils.enums import LanguageFormats as lang
-from ..translation_logic.jyutping import Jyutping
+from ..translation_logic.penyim import Penyim
 
 import json
 import os 
@@ -10,7 +10,7 @@ class GeneChinDictionary(DictionaryBase):
 
   def __init__(self, name, src_url):
     super().__init__(name)
-    self.jyutping_lang_type = lang.GC
+    self.penyim_lang_type = lang.GC
     self.src_url = src_url
   
   def load_dictionary(self):
@@ -34,7 +34,7 @@ class GeneChinDictionary(DictionaryBase):
     # Adjust Jyutping format to allow for parsing
     for entry in self.dictionary:
       entry.update({
-        "JYUTPING": [Jyutping(word.replace("-", " "), lang.GC) if word else None for word in entry["JYUTPING"]]
+        "PENYIM": [Penyim(word.replace("-", " "), lang.GC) if word else None for word in entry["JYUTPING"]]
       })
 
 

@@ -1,7 +1,7 @@
 from .dictionary_base import DictionaryBase
 from ..config import STEPHEN_LI_DICTIONARY_PATH
 from ..utils.enums import LanguageFormats as lang
-from ..translation_logic.jyutping import Jyutping
+from ..translation_logic.penyim import Penyim
 
 import os
 
@@ -11,7 +11,7 @@ class StephenLiDictionary(DictionaryBase):
 
     def __init__(self, name, src_url):
         super().__init__(name)
-        self.jyutping_lang_type = lang.SL
+        self.penyim_lang_type = lang.SL
         self.src_url = src_url
 
     def load_dictionary(self):
@@ -19,8 +19,7 @@ class StephenLiDictionary(DictionaryBase):
         self.dictionary = list(map(lambda x: {
             "SIMP": [x["taishanese"]],
             "TRAD": [None],  # we just group everything as simplified for stephen li
-            "JYUTPING": [Jyutping(x["taishaneseRomanization"].replace('[', '').replace(']', ''), lang.SL)],
-            "PENYIM": [None],
+            "PENYIM": [Penyim(x["taishaneseRomanization"].replace('[', '').replace(']', ''), lang.SL)],
             "DEFN": x["english"]
         }, self.dictionary))
 

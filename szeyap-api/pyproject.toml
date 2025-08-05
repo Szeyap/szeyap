@@ -12,10 +12,12 @@ dependencies = [
     "connexion[swagger-ui]",
     "gunicorn",
     "pip>=25.1.1",
-    "fuzzywuzzy>=0.18.0",
     "numpy>=2.3.1",
     "wordfreq>=3.1.1",
     "jieba>=0.42.1",
+    "spacy>=3.8.7",
+    "fast-langdetect>=0.3.2",
+    "en-core-web-sm @ https://github.com/explosion/spacy-models/releases/download/en_core_web_sm-3.8.0/en_core_web_sm-3.8.0-py3-none-any.whl",
 ]
 
 [project.scripts]

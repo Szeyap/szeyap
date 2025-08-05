@@ -19,29 +19,27 @@ paths:
           schema:
             type: string
           examples:
-            onePhrase:
-              summary: Example of a single phrase
-              value: "How are you doing?"
+            english:
+              summary: English word
+              value: "cats"
+            chinese:
+              summary: Chinese word
+              value: "貓"
+            penyim:
+              summary: Penyim
+              value: "miu2"
         - in: query
           name: limit
           required: false
           schema:
             type: integer
-            default: 100
+            default: 10
         - in: query
           name: dictionary
           required: true
           schema:
             type: string
             enum: [GC_DICT, SL_DICT]
-        - in: query
-          name: src_lang
-          required: true
-          schema: 
-            type: string
-            enum: [EN, CH, HSR, SL, GC, DJ, JW, UNK]
-          description: The source language of the phrase. Available options include en (English), ch (Chinese), and unk (Unknown).
-
       responses:
         '200':
           description: A response with metadata and a list of translations
@@ -89,15 +87,7 @@ paths:
           examples:
             onePhrase:
               summary: Example of a single phrase
-              value: "How are you doing?"
-        - in: query
-          name: src_lang
-          required: false
-          schema: 
-            type: string
-            default: UNK
-            enum: [EN, CH, HSR, SL, GC, DJ, JW, UNK]
-          description: The source language of the phrase. Available options include en (English), ch (Chinese), and default is unk (Unknown).
+              value: "cats"
       responses:
         '200':
           description: A response with metadata and a list of translations
