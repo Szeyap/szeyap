@@ -37,3 +37,7 @@ services:
     command: ["npm", "run", "dev"]
     environment:
       - NODE_ENV=DEVELOPMENT
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - APPLICATION_ID=${APPLICATION_ID}
+      - DEV_GUILD_ID=${DEV_GUILD_ID}
+      - API_BASE_URL=${API_BASE_URL}

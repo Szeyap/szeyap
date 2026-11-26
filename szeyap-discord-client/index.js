@@ -47,6 +47,14 @@ client.on(Events.InteractionCreate, async interaction => {
   }
 });
 
-client.login(process.env.DISCORD_TOKEN);
+if (!process.env.DISCORD_TOKEN) {
+  logger.error('DISCORD_TOKEN must be set (see .env.example).');
+  process.exit(1);
+}
+
+client.login(process.env.DISCORD_TOKEN).catch(error => {
+  logger.error(`Failed to log in to Discord: ${error.message}`);
+  process.exit(1);
+});
 
 module.exports.client = client;
