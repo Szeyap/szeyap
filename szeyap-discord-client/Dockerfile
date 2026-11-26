@@ -1,4 +1,4 @@
-FROM node:21.1-alpine
+FROM node:22-alpine
 RUN mkdir -p /usr/src/szeyap-discord-client
 WORKDIR /usr/src/szeyap-discord-client
 COPY package.json ./package.json

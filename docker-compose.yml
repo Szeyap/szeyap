@@ -8,7 +8,20 @@ services:
       dockerfile: Dockerfile
     ports:
       - "8000:8000"
-    command: ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "api:app", "--bind=0.0.0.0:8000"]
+    command: ["gunicorn", "-k", "uvicorn.workers.UvicornWorker", "szeyapapi.api:app", "--bind=0.0.0.0:8000"]
+  szeyap-discord-client:
+    container_name: szeyap-discord-client
+    build:
+      context: ./szeyap-discord-client
+      dockerfile: Dockerfile
+    command: ["npm", "start"]
+    restart: unless-stopped
+    environment:
+      - NODE_ENV=PRODUCTION
+      - DISCORD_TOKEN=${DISCORD_TOKEN}
+      - APPLICATION_ID=${APPLICATION_ID}
+      - DEV_GUILD_ID=${DEV_GUILD_ID}
+      - API_BASE_URL=${API_BASE_URL:-https://szeyap-backend-production.up.railway.app}
   szeyap-web-client:
     container_name: szeyap-web-client
     build:

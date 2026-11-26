@@ -1,5 +1,21 @@
 const { EmbedBuilder } = require('discord.js');
-const indexjs = require('../index.js');
+
+// The bot's avatar URL, looked up lazily at render time. This must not
+// be required at module load time: TranslationEmbed is loaded by the
+// command files, which are loaded by index.js, so a top-level
+// require('../index.js') here is circular — it re-runs index.js (and
+// client.login()) while the commands are still loading. Only use the
+// already-loaded index.js module when the bot itself loaded it; when
+// this file is loaded standalone (deploy-commands, tests) there is no
+// logged-in client yet, so the footer simply has no icon.
+function botAvatarURL() {
+  const loaded = require.cache[require.resolve('../index.js')];
+  if (!loaded) {
+    return undefined;
+  }
+  const client = loaded.exports && loaded.exports.client;
+  return client && client.user ? client.user.avatarURL() : undefined;
+}
 
 function wrapText(string, max, delim='\n') {
   const words = string.split(' ');
@@ -40,7 +56,7 @@ class NoResultsEmbed {
       .setDescription(this.desc)
       .setImage(this._pick_random_gif())
       .setTimestamp()
-      // .setFooter({ text: "", iconURL: indexjs.client.user.avatarURL() });
+      // .setFooter({ text: "", iconURL: botAvatarURL() });
   }
 }
 
@@ -71,11 +87,15 @@ class TranslationEmbed {
 
     render() {
       // const field_desc = "__**不知好歹 būt jï hāo āi**__\n> not know good from bad; can't tell chalk from cheese; not know kindness from malice.⁶"
+      const footer = { text: this.footer };
+      const avatarURL = botAvatarURL();
+      if (avatarURL) {
+        footer.iconURL = avatarURL;
+      }
       return new EmbedBuilder()
         .setColor([205,215,175])
         .setTitle(this.title)
         .setDescription(this.desc + "\n\u200B")
-        // .setAuthor({ name: this.title, iconURL: indexjs.client.user.avatarURL() })
         .addFields(this.fields.map(({ fieldTitle, description }, i) => {
           fieldTitle = fieldTitle.replaceAll('`', '\u00a0\u0300 ');
           if (i == this.selFld) {
@@ -85,7 +105,7 @@ class TranslationEmbed {
           }
         }))
         .setTimestamp()
-        .setFooter({ text: this.footer, iconURL: indexjs.client.user.avatarURL()});
+        .setFooter(footer);
     }
 
     renderAsText() {

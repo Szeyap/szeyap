@@ -52,6 +52,7 @@ module.exports = {
       option.setName('dictionary')
         .setDescription('Select dictionary to search in.')
         .addChoices([
+          { name: 'Both dictionaries', value: 'ALL_DICT' },
           { name: 'Stephen Li', value: 'SL_DICT' },
           { name: 'Gene Chin', value: 'GC_DICT' }
         ])
@@ -77,18 +78,19 @@ module.exports = {
     const selRomanization = interaction.options.getString('romanization');
     await interaction.deferReply();
 
-    // ask api
+    // ask api (the live fork backend accepts `language`, not the old
+    // `src_lang` parameter, and supports searching both dictionaries)
     const response = await axios.get(`${API_ENDPOINT}/translation`, {
       params: {
         phrase: message,
-        src_lang: 'UNK',
-        dictionary: dictionary ?? 'SL_DICT'
+        language: 'unk',
+        dictionary: dictionary ?? 'ALL_DICT'
       }
     });
 
     const state = {
       isEmbed: true,
-      prefRomanization: selRomanization ?? dictionary === 'GC_DICT' ? 'GC' : 'SL'
+      prefRomanization: selRomanization ?? (dictionary === 'GC_DICT' ? 'GC' : 'SL')
     };
 
     if (response.status !== 200) {
